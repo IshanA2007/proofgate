@@ -140,7 +140,7 @@ function renderTests(tests: TestResult, pinned?: PinSummary): string {
     `| Result | ${result} |`,
   );
   if (tests.durationMs !== undefined) {
-    lines.push(`| Duration | ${(tests.durationMs / 1000).toFixed(1)}s |`);
+    lines.push(`| Duration | ${(tests.durationMs / 1000).toFixed(0)}s |`);
   }
   if (tests.outputTail) {
     lines.push(

@@ -48,7 +48,7 @@ describe('renderReport', () => {
     });
     expect(report).toContain('STRONG');
     expect(report).toContain('npm test');
-    expect(report).toContain('12.3s');
+    expect(report).toContain('12s');
     expect(report).toContain('No test-gaming patterns detected');
   });
 
