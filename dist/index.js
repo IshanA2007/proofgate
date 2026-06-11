@@ -82999,7 +82999,9 @@ exports.realFs = {
 const OUTPUT_TAIL_LINES = 60;
 const OUTPUT_TAIL_CHARS = 4000;
 function tailOutput(output) {
-    const lastLines = output.split('\n').slice(-OUTPUT_TAIL_LINES).join('\n');
+    // eslint-disable-next-line no-control-regex
+    const plain = output.replace(/\x1b\[[0-9;]*[A-Za-z]/g, '');
+    const lastLines = plain.split('\n').slice(-OUTPUT_TAIL_LINES).join('\n');
     return lastLines.length > OUTPUT_TAIL_CHARS ? lastLines.slice(-OUTPUT_TAIL_CHARS) : lastLines;
 }
 /**
@@ -83075,7 +83077,11 @@ async function runTests(opts) {
     }
 }
 const defaultExec = (command, cwd) => new Promise((resolve, reject) => {
-    const child = (0, node_child_process_1.spawn)(command, { shell: true, cwd, env: { ...process.env, CI: 'true' } });
+    const child = (0, node_child_process_1.spawn)(command, {
+        shell: true,
+        cwd,
+        env: { ...process.env, CI: 'true', NO_COLOR: '1', FORCE_COLOR: '0' },
+    });
     let output = '';
     const capture = (chunk) => {
         output += chunk.toString();
