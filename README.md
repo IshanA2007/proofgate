@@ -118,3 +118,5 @@ The analysis pipeline is pure functions over the PR diff (`src/detectors/`), the
 - GitHub App for org-wide install and fork-PR comments
 - Coverage diffing
 - Semantic (LLM-assisted) diff review
+
+_Currently validating ProofGate against its own pull requests._
