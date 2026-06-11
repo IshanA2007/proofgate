@@ -1,0 +1,28 @@
+# Dogfood: ProofGate gates its own pull requests.
+name: ProofGate
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+  pull-requests: write
+
+concurrency:
+  group: proofgate-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  proofgate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - uses: ./
+        with:
+          test-command: npm test

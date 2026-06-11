@@ -1,0 +1,50 @@
+name: 'ProofGate'
+description: >-
+  Shift the burden of proof to PR contributors: run the test suite, detect
+  test-gaming tricks, require an AI-disclosure attestation, and post one clear
+  verdict — strong, weak, or gaming-detected.
+branding:
+  icon: 'shield'
+  color: 'purple'
+
+inputs:
+  github-token:
+    description: >-
+      Token used to read the PR diff and post the verdict comment.
+      Needs `pull-requests: write` to comment; falls back to the job summary
+      without it.
+    required: false
+    default: ${{ github.token }}
+  test-command:
+    description: >-
+      Command that runs the project's test suite. When omitted, ProofGate
+      auto-detects npm/pnpm/yarn, pytest, go, cargo, rspec, gradle, or maven.
+    required: false
+  require-attestation:
+    description: >-
+      Require the "ProofGate Attestation" section in the PR description
+      ("true" or "false").
+    required: false
+    default: 'true'
+  fail-on:
+    description: >-
+      When to fail the check: "gaming" (default — fail only on
+      gaming-detected), "weak" (fail unless strong), or "never".
+    required: false
+    default: 'gaming'
+  working-directory:
+    description: 'Directory in which tests are detected and run.'
+    required: false
+    default: '.'
+
+outputs:
+  verdict:
+    description: 'The verdict: strong, weak, or gaming-detected.'
+  tests-passed:
+    description: 'Whether the test suite passed ("true"/"false").'
+  findings:
+    description: 'JSON array of gaming-scan findings.'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
