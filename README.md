@@ -47,7 +47,7 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: npm }
       - run: npm ci
-      - uses: your-org/proofgate@v1
+      - uses: IshanA2007/proofgate@v1
 ```
 
 Then copy [`templates/pull_request_template.md`](templates/pull_request_template.md) to `.github/pull_request_template.md` so every PR starts with the attestation section.
