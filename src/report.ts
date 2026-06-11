@@ -1,4 +1,12 @@
-import type { AttestationResult, Finding, TestResult, Verdict, VerdictResult } from './types';
+import type {
+  AttestationResult,
+  Finding,
+  PatchCoverage,
+  PinSummary,
+  TestResult,
+  Verdict,
+  VerdictResult,
+} from './types';
 
 export const COMMENT_MARKER = '<!-- proofgate-report -->';
 
@@ -27,6 +35,10 @@ export interface ReportInput {
   findings: Finding[];
   attestation: AttestationResult;
   requireAttestation: boolean;
+  coverage?: PatchCoverage;
+  pinned?: PinSummary;
+  /** True when test/coverage results were attested by an upstream CI run. */
+  ciReported?: boolean;
 }
 
 const MAX_INLINE = 200;
@@ -50,7 +62,69 @@ function tableCode(text: string): string {
   return stripCode(text).replace(/\|/g, '\\|');
 }
 
-function renderTests(tests: TestResult): string {
+/** Collapses sorted line numbers into compact ranges: [1,2,3,7] → "1–3, 7". */
+function ranges(lines: number[]): string {
+  const sorted = [...lines].sort((a, b) => a - b);
+  const parts: string[] = [];
+  let start: number | undefined;
+  let prev: number | undefined;
+  for (const n of sorted) {
+    if (prev !== undefined && n === prev + 1) {
+      prev = n;
+      continue;
+    }
+    if (start !== undefined) parts.push(start === prev ? `${start}` : `${start}–${prev}`);
+    start = prev = n;
+  }
+  if (start !== undefined) parts.push(start === prev ? `${start}` : `${start}–${prev}`);
+  return parts.join(', ');
+}
+
+function renderCoverage(cov: PatchCoverage | undefined): string {
+  const lines: string[] = ['### 📊 Patch coverage', ''];
+  if (!cov) {
+    lines.push(
+      'Not configured — set `coverage-command` (or `coverage-file`) to require test coverage on changed lines.',
+    );
+    return lines.join('\n');
+  }
+  if (!cov.computed) {
+    lines.push(`Not computed — ${escapeMd(cov.reason ?? 'no coverage report found')}.`);
+    return lines.join('\n');
+  }
+  if (cov.percent === undefined) {
+    lines.push('No measurable changed lines in this PR.');
+  } else {
+    lines.push(
+      `**${cov.percent}%** of changed lines are covered by tests (${cov.coveredLines}/${cov.totalLines}).`,
+    );
+    const uncoveredFiles = (cov.files ?? []).filter((f) => f.uncovered > 0);
+    if (uncoveredFiles.length > 0) {
+      lines.push(
+        '',
+        '<details><summary>Uncovered changed lines</summary>',
+        '',
+        '| File | Uncovered lines |',
+        '| --- | --- |',
+      );
+      for (const f of uncoveredFiles) {
+        lines.push(`| \`${tableCode(f.file)}\` | ${ranges(f.uncoveredLines)} |`);
+      }
+      lines.push('', '</details>');
+    }
+  }
+  if (cov.unmatchedFiles && cov.unmatchedFiles.length > 0) {
+    lines.push(
+      '',
+      `⚠️ Absent from the coverage report entirely: ${cov.unmatchedFiles
+        .map((f) => `\`${stripCode(f)}\``)
+        .join(', ')} — likely never imported by any test.`,
+    );
+  }
+  return lines.join('\n');
+}
+
+function renderTests(tests: TestResult, pinned?: PinSummary): string {
   const lines: string[] = ['### 🧪 Tests', ''];
   if (!tests.ran) {
     lines.push(`⏭️ **Tests not run** — ${escapeMd(tests.skippedReason ?? 'unknown reason')}`);
@@ -79,6 +153,18 @@ function renderTests(tests: TestResult): string {
       '',
       '</details>',
     );
+  }
+  if (pinned) {
+    if (pinned.ran) {
+      lines.push(
+        '',
+        pinned.regression
+          ? "🧷 **Base-pinned run: ❌ failed** — the base branch's tests fail against this PR's code. The PR likely rewrote tests to hide a regression."
+          : "🧷 Base-pinned run: ✅ passed — the base branch's tests also pass against this code.",
+      );
+    } else {
+      lines.push('', `🧷 Base-pinned run: ⏭️ skipped — ${escapeMd(pinned.reason ?? '')}`);
+    }
   }
   return lines.join('\n');
 }
@@ -147,13 +233,20 @@ export function renderReport(input: ReportInput): string {
     '**Why:**',
     ...input.verdict.reasons.map((r) => `- ${escapeMd(r)}`),
     '',
-    renderTests(input.tests),
+    renderTests(input.tests, input.pinned),
+    '',
+    renderCoverage(input.coverage),
     '',
     renderFindings(input.findings),
     '',
     renderAttestation(input.attestation, input.requireAttestation),
     '',
     '---',
+    ...(input.ciReported
+      ? [
+          '<sub>Test, coverage, and pinning results are as reported by the upstream CI run; the gaming scan and attestation were recomputed independently by ProofGate.</sub>',
+        ]
+      : []),
     '<sub>🛡️ ProofGate — proof-of-work for pull requests. The contributor carries the burden of proof, not the maintainer.</sub>',
   ];
   return parts.join('\n');

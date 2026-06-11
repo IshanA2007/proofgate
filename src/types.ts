@@ -52,6 +52,35 @@ export interface AttestationResult {
   missingItems: string[];
 }
 
+export interface FilePatchCoverage {
+  file: string;
+  covered: number;
+  uncovered: number;
+  uncoveredLines: number[];
+}
+
+export interface PatchCoverage {
+  computed: boolean;
+  /** Why coverage was not computed. */
+  reason?: string;
+  /** 0–100; undefined when there are no measurable changed lines. */
+  percent?: number;
+  coveredLines?: number;
+  totalLines?: number;
+  files?: FilePatchCoverage[];
+  /** Source files with added lines that never appear in the coverage report. */
+  unmatchedFiles?: string[];
+  reportFile?: string;
+}
+
+/** Outcome of the base-branch pinned test run, summarized for reports. */
+export interface PinSummary {
+  ran: boolean;
+  regression: boolean;
+  passed?: boolean;
+  reason?: string;
+}
+
 export type Verdict = 'strong' | 'weak' | 'gaming-detected';
 
 export interface VerdictResult {
@@ -60,3 +89,23 @@ export interface VerdictResult {
 }
 
 export type FailOn = 'gaming' | 'weak' | 'never';
+
+/**
+ * CI-attested results carried from the check run to the relay/App via the
+ * report artifact. Everything in here is forgeable by code running in the PR
+ * job, so consumers recompute the diff scan and attestation themselves and
+ * only trust this for test/coverage/pinning outcomes (clearly labeled).
+ */
+export interface ReportMeta {
+  version: 1;
+  prNumber: number;
+  headSha?: string;
+  tests: TestResult;
+  coverage?: PatchCoverage;
+  pinned?: PinSummary;
+  inputs: {
+    requireAttestation: boolean;
+    requireTests: boolean;
+    patchCoverageThreshold: number;
+  };
+}

@@ -19,8 +19,10 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run typecheck
+      - run: npm run app:typecheck
       - run: npm test
       - run: npm run build
+      - run: npm run app:build
       - name: Ensure dist/ is up to date
         run: |
           if ! git diff --quiet dist/; then

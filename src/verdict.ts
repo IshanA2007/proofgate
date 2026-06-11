@@ -1,10 +1,19 @@
-import type { AttestationResult, Finding, TestResult, VerdictResult } from './types';
+import type {
+  AttestationResult,
+  Finding,
+  PatchCoverage,
+  TestResult,
+  VerdictResult,
+} from './types';
 
 export interface VerdictInput {
   tests: TestResult;
   findings: Finding[];
   attestation: AttestationResult;
   requireAttestation: boolean;
+  coverage?: PatchCoverage;
+  /** Minimum patch coverage percent; 0 disables the check. */
+  coverageThreshold?: number;
 }
 
 const MAX_DETAILED_REASONS = 5;
@@ -55,12 +64,21 @@ export function computeVerdict(input: VerdictInput): VerdictResult {
     reasons.push(`${medium.length} suspicious change(s) need human review`);
   }
 
+  const cov = input.coverage;
+  const threshold = input.coverageThreshold ?? 0;
+  const covMeasured = cov?.computed === true && cov.percent !== undefined;
+  if (covMeasured && threshold > 0 && cov.percent! < threshold) {
+    weak = true;
+    reasons.push(`Patch coverage ${cov.percent}% is below the ${threshold}% threshold`);
+  }
+
   if (weak) return { verdict: 'weak', reasons };
 
   return {
     verdict: 'strong',
     reasons: [
       'Test suite passed in a clean environment',
+      ...(covMeasured ? [`Patch coverage ${cov.percent}% of changed lines`] : []),
       ...(input.requireAttestation ? ['Contributor attestation complete'] : []),
       'No test-gaming signals found',
     ],

@@ -1,0 +1,18 @@
+# Probot app manifest — used by the first-run setup wizard (`npm run app:dev`)
+# to register the GitHub App with one click.
+name: proofgate
+description: >-
+  Delivers ProofGate verdicts everywhere the Action's token cannot: posts the
+  sticky verdict comment on fork PRs and publishes a ProofGate Check Run. The
+  gaming scan and attestation are recomputed server-side so a forged CI
+  artifact cannot fake a STRONG verdict.
+url: https://github.com/IshanA2007/proofgate
+public: true
+default_events:
+  - workflow_run
+default_permissions:
+  actions: read
+  checks: write
+  contents: read
+  metadata: read
+  pull_requests: write

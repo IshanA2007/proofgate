@@ -3,3 +3,7 @@ lib/
 coverage/
 *.log
 .DS_Store
+app/dist/
+app/.env
+*.private-key.pem
+proofgate-report/

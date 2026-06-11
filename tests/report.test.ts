@@ -132,6 +132,72 @@ describe('renderReport', () => {
     expect(report).not.toMatch(/^## ✅ Fake STRONG heading/m);
   });
 
+  it('renders patch coverage with compact uncovered-line ranges', () => {
+    const report = renderReport({
+      verdict: { verdict: 'weak', reasons: ['coverage'] },
+      tests: passingTests,
+      findings: [],
+      attestation: completeAttestation,
+      requireAttestation: true,
+      coverage: {
+        computed: true,
+        percent: 40,
+        coveredLines: 2,
+        totalLines: 5,
+        files: [{ file: 'src/x.ts', covered: 2, uncovered: 3, uncoveredLines: [4, 5, 6, 9] }],
+        unmatchedFiles: ['src/never.ts'],
+      },
+    });
+    expect(report).toContain('**40%** of changed lines');
+    expect(report).toContain('4–6, 9');
+    expect(report).toContain('src/never.ts');
+  });
+
+  it('shows a hint when coverage is not configured', () => {
+    const report = renderReport({
+      verdict: { verdict: 'strong', reasons: [] },
+      tests: passingTests,
+      findings: [],
+      attestation: completeAttestation,
+      requireAttestation: true,
+    });
+    expect(report).toContain('coverage-command');
+  });
+
+  it('renders the base-pinned run outcome', () => {
+    const regression = renderReport({
+      verdict: { verdict: 'gaming-detected', reasons: ['regression'] },
+      tests: passingTests,
+      findings: [],
+      attestation: completeAttestation,
+      requireAttestation: true,
+      pinned: { ran: true, regression: true, passed: false },
+    });
+    expect(regression).toContain('Base-pinned run: ❌ failed');
+
+    const skipped = renderReport({
+      verdict: { verdict: 'strong', reasons: [] },
+      tests: passingTests,
+      findings: [],
+      attestation: completeAttestation,
+      requireAttestation: true,
+      pinned: { ran: false, regression: false, reason: 'no existing test files were modified' },
+    });
+    expect(skipped).toContain('skipped — no existing test files');
+  });
+
+  it('adds the CI-attestation footnote in relayed reports', () => {
+    const report = renderReport({
+      verdict: { verdict: 'strong', reasons: [] },
+      tests: passingTests,
+      findings: [],
+      attestation: completeAttestation,
+      requireAttestation: true,
+      ciReported: true,
+    });
+    expect(report).toContain('recomputed independently');
+  });
+
   it('includes test output in a collapsible section', () => {
     const report = renderReport({
       verdict: { verdict: 'strong', reasons: [] },

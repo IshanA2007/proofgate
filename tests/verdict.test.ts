@@ -99,6 +99,54 @@ describe('computeVerdict', () => {
     expect(result.reasons.join(' ')).toContain('human review');
   });
 
+  it('returns weak when patch coverage is below the threshold', () => {
+    const result = computeVerdict({
+      tests: passingTests,
+      findings: [],
+      attestation: completeAttestation,
+      requireAttestation: true,
+      coverage: { computed: true, percent: 34.5, coveredLines: 10, totalLines: 29 },
+      coverageThreshold: 50,
+    });
+    expect(result.verdict).toBe('weak');
+    expect(result.reasons.join(' ')).toContain('34.5%');
+  });
+
+  it('mentions passing coverage in strong verdicts and skips the check at threshold 0', () => {
+    const strong = computeVerdict({
+      tests: passingTests,
+      findings: [],
+      attestation: completeAttestation,
+      requireAttestation: true,
+      coverage: { computed: true, percent: 92, coveredLines: 23, totalLines: 25 },
+      coverageThreshold: 50,
+    });
+    expect(strong.verdict).toBe('strong');
+    expect(strong.reasons.join(' ')).toContain('92%');
+
+    const disabled = computeVerdict({
+      tests: passingTests,
+      findings: [],
+      attestation: completeAttestation,
+      requireAttestation: true,
+      coverage: { computed: true, percent: 5, coveredLines: 1, totalLines: 20 },
+      coverageThreshold: 0,
+    });
+    expect(disabled.verdict).toBe('strong');
+  });
+
+  it('skips the coverage check when there are no measurable lines', () => {
+    const result = computeVerdict({
+      tests: passingTests,
+      findings: [],
+      attestation: completeAttestation,
+      requireAttestation: true,
+      coverage: { computed: true, percent: undefined, coveredLines: 0, totalLines: 0 },
+      coverageThreshold: 50,
+    });
+    expect(result.verdict).toBe('strong');
+  });
+
   it('accumulates multiple weak reasons', () => {
     const result = computeVerdict({
       tests: failingTests,

@@ -1,0 +1,34 @@
+# Relay: posts ProofGate verdicts on fork PRs, where the main job's token is
+# read-only. Runs the default branch's version of the action and never
+# executes PR code; "post" mode recomputes the gaming scan and attestation
+# from the API, so a forged artifact cannot fake a STRONG verdict.
+name: ProofGate Comment
+
+on:
+  workflow_run:
+    workflows: ["ProofGate"]
+    types: [completed]
+
+permissions:
+  pull-requests: write
+  actions: read
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      # workflow_run jobs already run in default-branch context, but pin the
+      # ref explicitly so this never executes PR code even if that changes.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+      - uses: actions/download-artifact@v4
+        with:
+          name: proofgate-report
+          path: proofgate-report
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - uses: ./
+        with:
+          mode: post

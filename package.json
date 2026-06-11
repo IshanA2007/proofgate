@@ -1,6 +1,6 @@
 {
   "name": "proofgate",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "private": true,
   "description": "GitHub Action that shifts the burden of proof to PR contributors: runs tests, detects test-gaming, requires AI disclosure, posts one clear verdict.",
   "main": "dist/index.js",
@@ -11,15 +11,26 @@
     "build": "ncc build src/main.ts -o dist --source-map --license licenses.txt",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "app:typecheck": "tsc -p app",
+    "app:build": "esbuild app/src/main.ts --bundle --platform=node --format=esm --packages=external --outfile=app/dist/main.mjs",
+    "app:start": "node app/dist/main.mjs",
+    "app:dev": "cd app && tsx watch src/main.ts"
   },
   "dependencies": {
+    "@actions/artifact": "^2.3.2",
     "@actions/core": "^1.11.1",
-    "@actions/github": "^6.0.0"
+    "@actions/github": "^6.0.0",
+    "adm-zip": "^0.5.17",
+    "probot": "^13.4.7"
   },
   "devDependencies": {
+    "@types/adm-zip": "^0.5.8",
     "@types/node": "^20.17.0",
     "@vercel/ncc": "^0.38.3",
+    "@vitest/coverage-v8": "^3.2.6",
+    "esbuild": "^0.28.0",
+    "tsx": "^4.22.4",
     "typescript": "^5.7.2",
     "vitest": "^3.0.0"
   }

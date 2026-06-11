@@ -20,6 +20,47 @@ inputs:
       Command that runs the project's test suite. When omitted, ProofGate
       auto-detects npm/pnpm/yarn, pytest, go, cargo, rspec, gradle, or maven.
     required: false
+  coverage-command:
+    description: >-
+      Command that runs the suite WITH coverage (used instead of test-command),
+      e.g. "npx vitest run --coverage" or "pytest --cov --cov-report=lcov".
+    required: false
+  coverage-file:
+    description: >-
+      Path to the coverage report (lcov or Go coverprofile). Auto-detected at
+      lcov.info, coverage/lcov.info, coverage.lcov, or coverage.out.
+    required: false
+  patch-coverage-threshold:
+    description: >-
+      Minimum percent of changed lines that must be covered by tests before
+      the verdict can be strong. "0" disables the check.
+    required: false
+    default: '50'
+  require-tests:
+    description: >-
+      When coverage is unavailable, flag PRs that change source without
+      touching any tests ("true"/"false").
+    required: false
+    default: 'true'
+  base-test-pinning:
+    description: >-
+      Rerun the suite with the base branch's versions of any test files this
+      PR modified: "auto" (only when tests were modified), "always", or "off".
+      A pass→fail divergence is treated as gaming.
+    required: false
+    default: 'auto'
+  mode:
+    description: >-
+      "check" analyzes the PR (default). "post" is for workflow_run relay jobs:
+      it reads a previously uploaded proofgate-report artifact from report-path,
+      recomputes the diff scan and attestation, and posts the verdict comment —
+      this is how fork PRs get comments.
+    required: false
+    default: 'check'
+  report-path:
+    description: 'Directory containing the downloaded report artifact (mode: post).'
+    required: false
+    default: 'proofgate-report'
   require-attestation:
     description: >-
       Require the "ProofGate Attestation" section in the PR description
@@ -44,6 +85,8 @@ outputs:
     description: 'Whether the test suite passed ("true"/"false").'
   findings:
     description: 'JSON array of gaming-scan findings.'
+  patch-coverage:
+    description: 'Percent of changed lines covered by tests (empty when not computed).'
 
 runs:
   using: 'node20'

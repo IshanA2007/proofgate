@@ -25,4 +25,4 @@ jobs:
       - run: npm ci
       - uses: ./
         with:
-          test-command: npm test
+          coverage-command: npx vitest run --coverage

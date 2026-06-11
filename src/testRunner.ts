@@ -22,7 +22,7 @@ export const realFs: FsLike = {
 const OUTPUT_TAIL_LINES = 60;
 const OUTPUT_TAIL_CHARS = 4000;
 
-function tail(output: string): string {
+export function tailOutput(output: string): string {
   const lastLines = output.split('\n').slice(-OUTPUT_TAIL_LINES).join('\n');
   return lastLines.length > OUTPUT_TAIL_CHARS ? lastLines.slice(-OUTPUT_TAIL_CHARS) : lastLines;
 }
@@ -91,7 +91,7 @@ export async function runTests(opts: RunTestsOptions): Promise<TestResult> {
       passed: exitCode === 0,
       exitCode,
       durationMs: Date.now() - start,
-      outputTail: tail(output),
+      outputTail: tailOutput(output),
     };
   } catch (err) {
     // The command could not even be spawned; treat it as a failed run so the

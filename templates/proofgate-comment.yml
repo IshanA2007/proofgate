@@ -1,0 +1,34 @@
+# ProofGate relay: posts the verdict comment on fork PRs, where the main
+# ProofGate job's token is read-only. Copy to .github/workflows/.
+#
+# Security model: this workflow runs with write permissions but never checks
+# out or executes PR code. The action's "post" mode recomputes the gaming scan
+# and attestation directly from the GitHub API and takes only test/coverage
+# results from the artifact, so a forged artifact cannot turn a gamed diff
+# into a STRONG verdict.
+name: ProofGate Comment
+
+on:
+  workflow_run:
+    # Must match the `name:` of the workflow that runs ProofGate in check mode.
+    workflows: ["ProofGate"]
+    types: [completed]
+
+permissions:
+  pull-requests: write
+  actions: read
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: proofgate-report
+          path: proofgate-report
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+      - uses: IshanA2007/proofgate@v1
+        with:
+          mode: post
