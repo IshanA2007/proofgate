@@ -59,3 +59,16 @@ export function isSourceFile(path: string): boolean {
 export function prModifiesSource(files: ChangedFile[]): boolean {
   return files.some((f) => isSourceFile(f.filename));
 }
+
+/** Rough one-line summary of where a changeset concentrates. */
+export function describeChangeSurface(files: string[]): string {
+  const tests = files.filter((f) => isTestFile(f));
+  const ci = files.filter((f) => isCiFile(f));
+  if (tests.length > ci.length && tests.length > 0) {
+    return `mostly tests (${tests.length} file(s))`;
+  }
+  if (ci.length > 0) {
+    return `touches CI (${ci.length} file(s))`;
+  }
+  return 'source-only';
+}
